@@ -25,6 +25,7 @@ export BUILD_DIR CACHE_DIR ENV_DIR BIN_DIR PROFILE_PATH
 source $BIN_DIR/utils
 
 # exit if no build environment
+
 [[ ! $REDIS_URL ]] && error "No supporting environment detected!\nPlease create supporting application services."
 
 cd $BUILD_DIR
