@@ -45,7 +45,9 @@ sudo -E apt-get clean
 
 # 3. System Users
 status "Configuring git user"
-sudo adduser --disabled-login --gecos 'GitLab' git
+# Add a git user on the host and use the same gid and uuid
+sudo addgroup -q --gid 1002 git
+sudo adduser -q --disabled-login --gecos 'GitLab' --uid 1002 --gid 1002 git
 
 # 4. GitLab shell
 sudo -u git -H mkdir -p /home/git/gitlab-shell
