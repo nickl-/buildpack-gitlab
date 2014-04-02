@@ -7,18 +7,52 @@ This is a [Heroku buildpack](http://devcenter.heroku.com/articles/buildpacks) fo
 
 ## Usage
 
+### Prepare gitlab repository
+
 Checkout gitlabhq:
 
 	$ git clone https://github.com/gitlabhq/gitlabhq.git
 	$ cd gitlabhq
 	$ git checkout -b deployment
-    $ echo -e "https://github.com/amtrack/buildpack-gitlab.git\nhttps://github.com/heroku/heroku-buildpack-ruby.git" > .buildpacks
+
+Create and commit `.buildpacks`:
+
+    $ echo "https://github.com/amtrack/buildpack-gitlab.git" > .buildpacks
+    $ echo "https://github.com/heroku/heroku-buildpack-ruby.git" >> .buildpacks
 	$ git add .buildpacks
 	$ git commit -m "prepare for dokku"
-	$ git remote add dokku <your-dokku-url>
-	$ git push dokku deployment:master # will fail
 
-Configure the app on your dokku server:
+Add ruby version and `rails_12factor` gem to Gemfile and rebuild Gemfile.lock:
+
+    $ awk '/^source/{print $0"\nruby \"2.0.0\"\ngem \"rails_12factor\""};!/^source/' Gemfile > Gemfile.tmp
+    $ mv Gemfile{.tmp,}
+    $ bundle install
+    $ git commit -am"Add ruby and rails12factor to Gemfile"
+
+Create a dokku application on the server:
+
+	$ git remote add dokku <your-dokku-url>:<your-app-name>
+	$ git push dokku deployment:master
+
+The push will fail with the following message
+
+    No supporting environment detected!
+    Please create supporting application services.
+
+To configure the supporting services you can use the helper script
+
+   $ ./dokku-services <app-name>
+
+Assuming you have the following section configured in your ssh client config file (located at `~/.ssh/config`)
+
+```ssh
+Host dokku
+   HostName dokku.example.com
+   User dokku
+   RequestTTY yes
+```
+
+or manually configure the app on your dokku server:
 
 	$ dokku config:set gitlab BUILDPACK_URL=https://github.com/ddollar/heroku-buildpack-multi.git
 	$ dokku config:set gitlab CURL_TIMEOUT=120
@@ -39,6 +73,11 @@ Seed the database:
 
 	$ dokku run gitlab bundle exec rake db:setup RAILS_ENV=production
 	$ dokku run gitlab bundle exec rake db:seed_fu RAILS_ENV=production
+
+or the helper script
+
+    $ ./dokku-seed-gitlab <app-name>
+    
 
 ## Required dokku plugins
 
